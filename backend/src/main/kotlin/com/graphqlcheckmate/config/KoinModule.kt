@@ -6,6 +6,7 @@ import com.graphqlcheckmate.SupabaseService
 import com.graphqlcheckmate.resolvers.*
 import com.graphqlcheckmate.services.AuthService
 import com.graphqlcheckmate.services.GroupService
+import com.graphqlcheckmate.services.TodoListService
 import com.graphqlcheckmate.services.UserService
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
@@ -39,6 +40,7 @@ fun appModule(supabaseUrl: String, supabaseKey: String) = module {
     singleOf(::AuthService)
     singleOf(::UserService)
     singleOf(::GroupService)
+    singleOf(::TodoListService)
 
     // Request scope - automatically tied to Ktor request lifecycle
     // ApplicationCall is automatically available for injection in this scope
@@ -87,8 +89,23 @@ fun appModule(supabaseUrl: String, supabaseKey: String) = module {
 
     // Resolvers - Group Fields
     singleOf(::GroupMembersResolver)
-    // Note: ChecklistItem resolvers moved to examples
-    // See: backend/src/main/kotlin/com/graphqlcheckmate/examples/checklist/resolvers/
+
+    // Resolvers - TODO List Queries
+    singleOf(::TodoListsQueryResolver)
+    singleOf(::TodoListQueryResolver)
+
+    // Resolvers - TODO List Mutations
+    singleOf(::CreateTodoListResolver)
+    singleOf(::UpdateTodoListResolver)
+    singleOf(::DeleteTodoListResolver)
+
+    // Resolvers - TODO Item Mutations
+    singleOf(::CreateTodoItemResolver)
+    singleOf(::UpdateTodoItemResolver)
+    singleOf(::DeleteTodoItemResolver)
+
+    // Resolvers - TODO List Fields
+    singleOf(::TodoListItemsResolver)
 }
 
 /**

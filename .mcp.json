@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp",
+        "--add-dir",
+        "/tmp",
+        "--mcp-config",
+        "/tmp/airchat-mcp-config-3442805285.json"
+      ],
+      "env": {}
+    }
+  }
+}

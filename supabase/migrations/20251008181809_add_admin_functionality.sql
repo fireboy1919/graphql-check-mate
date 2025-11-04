@@ -32,27 +32,32 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth;
 
 -- Update RLS policies to allow admins to mutate all items
+-- Note: checklist_items is an example table. This section can be removed if not using that example.
+-- The admin functions above (is_admin, set_user_admin) are still useful for other parts of the app.
 
--- Drop existing mutation policies
-DROP POLICY IF EXISTS "Users can create their own checklist items" ON public.checklist_items;
-DROP POLICY IF EXISTS "Users can update their own checklist items" ON public.checklist_items;
-DROP POLICY IF EXISTS "Users can delete their own checklist items" ON public.checklist_items;
+-- Conditionally drop existing checklist mutation policies (only if table exists)
+DO $$
+BEGIN
+  IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'checklist_items') THEN
+    DROP POLICY IF EXISTS "Users can create their own checklist items" ON public.checklist_items;
+    DROP POLICY IF EXISTS "Users can update their own checklist items" ON public.checklist_items;
+    DROP POLICY IF EXISTS "Users can delete their own checklist items" ON public.checklist_items;
 
--- Recreate policies with admin access
-CREATE POLICY "Users and admins can create checklist items"
-  ON public.checklist_items
-  FOR INSERT
-  WITH CHECK (auth.uid() = user_id OR public.is_admin());
+    -- Recreate policies with admin access
+    EXECUTE 'CREATE POLICY "Users and admins can create checklist items"
+      ON public.checklist_items
+      FOR INSERT
+      WITH CHECK (auth.uid() = user_id OR public.is_admin())';
 
-CREATE POLICY "Users and admins can update checklist items"
-  ON public.checklist_items
-  FOR UPDATE
-  USING (auth.uid() = user_id OR public.is_admin());
+    EXECUTE 'CREATE POLICY "Users and admins can update checklist items"
+      ON public.checklist_items
+      FOR UPDATE
+      USING (auth.uid() = user_id OR public.is_admin())';
 
-CREATE POLICY "Users and admins can delete checklist items"
-  ON public.checklist_items
-  FOR DELETE
-  USING (auth.uid() = user_id OR public.is_admin());
-
--- Keep the SELECT policy unchanged (users can only see their own items)
--- Admins don't need to see all items, just mutate them
+    EXECUTE 'CREATE POLICY "Users and admins can delete checklist items"
+      ON public.checklist_items
+      FOR DELETE
+      USING (auth.uid() = user_id OR public.is_admin())';
+  END IF;
+END
+$$;

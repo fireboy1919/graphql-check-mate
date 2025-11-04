@@ -37,6 +37,27 @@ data class UserEntity(
     val created_at: String
 )
 
+@Serializable
+data class TodoListEntity(
+    val id: String,
+    val subject: String,
+    val group_id: String,
+    val owner_id: String,
+    val created_at: String,
+    val updated_at: String
+)
+
+@Serializable
+data class TodoItemEntity(
+    val id: String,
+    val todo_list_id: String,
+    val text: String,
+    val completed: Boolean,
+    val order_index: Int,
+    val created_at: String,
+    val updated_at: String
+)
+
 /**
  * Input for creating a new checklist item
  */
@@ -80,6 +101,44 @@ data class SearchUsersInput(
 @Serializable
 data class DeleteUserInput(
     val user_id: String
+)
+
+/**
+ * Input for creating a new TODO list
+ */
+@Serializable
+data class CreateTodoListInput(
+    val subject: String,
+    val group_id: String,
+    val owner_id: String
+)
+
+/**
+ * Input for updating a TODO list
+ */
+@Serializable
+data class UpdateTodoListInput(
+    val subject: String? = null
+)
+
+/**
+ * Input for creating a new TODO item
+ */
+@Serializable
+data class CreateTodoItemInput(
+    val todo_list_id: String,
+    val text: String,
+    val order_index: Int = 0
+)
+
+/**
+ * Input for updating a TODO item
+ */
+@Serializable
+data class UpdateTodoItemInput(
+    val text: String? = null,
+    val completed: Boolean? = null,
+    val order_index: Int? = null
 )
 
 /**
@@ -311,21 +370,21 @@ class AuthenticatedSupabaseClient(
     }
 
     /**
-     * Get all checkbox groups the user is a member of
+     * Get all groups the user is a member of
      * Uses the Supabase Postgrest client which properly handles RLS policies
      */
     suspend fun getCheckboxGroups(): List<com.graphqlcheckmate.services.CheckboxGroupEntity> {
-        return client.from("checkbox_groups")
+        return client.from("groups")
             .select()
             .decodeList<com.graphqlcheckmate.services.CheckboxGroupEntity>()
     }
 
     /**
-     * Get a specific checkbox group by ID
+     * Get a specific group by ID
      * Uses the Supabase Postgrest client which properly handles RLS policies
      */
     suspend fun getCheckboxGroupById(groupId: String): com.graphqlcheckmate.services.CheckboxGroupEntity? {
-        return client.from("checkbox_groups")
+        return client.from("groups")
             .select {
                 filter {
                     eq("id", groupId)
@@ -335,7 +394,7 @@ class AuthenticatedSupabaseClient(
     }
 
     /**
-     * Create a new checkbox group
+     * Create a new group
      */
     suspend fun createCheckboxGroup(
         name: String,
@@ -347,7 +406,7 @@ class AuthenticatedSupabaseClient(
             description = description,
             owner_id = ownerId
         )
-        val response: HttpResponse = httpClient.post("$supabaseUrl/rest/v1/checkbox_groups") {
+        val response: HttpResponse = httpClient.post("$supabaseUrl/rest/v1/groups") {
             header("Authorization", "Bearer $accessToken")
             header("apikey", supabaseKey)
             header("Prefer", "return=representation")
@@ -417,5 +476,164 @@ class AuthenticatedSupabaseClient(
                 }
             }
             .decodeList<ChecklistItemEntity>()
+    }
+
+    // TODO Lists Operations
+
+    /**
+     * Get all TODO lists for a specific group
+     * RLS policies will ensure the user is a member of the group
+     */
+    suspend fun getTodoListsByGroup(groupId: String): List<TodoListEntity> {
+        return client.from("todo_lists")
+            .select {
+                filter {
+                    eq("group_id", groupId)
+                }
+            }
+            .decodeList<TodoListEntity>()
+    }
+
+    /**
+     * Get a specific TODO list by ID
+     * RLS policies will ensure the user has access
+     */
+    suspend fun getTodoListById(id: String): TodoListEntity? {
+        return client.from("todo_lists")
+            .select {
+                filter {
+                    eq("id", id)
+                }
+            }
+            .decodeSingleOrNull<TodoListEntity>()
+    }
+
+    /**
+     * Create a new TODO list
+     */
+    suspend fun createTodoList(subject: String, groupId: String, ownerId: String): TodoListEntity {
+        return client.from("todo_lists")
+            .insert(
+                CreateTodoListInput(
+                    subject = subject,
+                    group_id = groupId,
+                    owner_id = ownerId
+                )
+            ) {
+                select()
+            }
+            .decodeSingle<TodoListEntity>()
+    }
+
+    /**
+     * Update a TODO list
+     */
+    suspend fun updateTodoList(id: String, subject: String?): TodoListEntity {
+        return client.from("todo_lists")
+            .update(
+                UpdateTodoListInput(subject = subject)
+            ) {
+                filter {
+                    eq("id", id)
+                }
+                select()
+            }
+            .decodeSingle<TodoListEntity>()
+    }
+
+    /**
+     * Delete a TODO list
+     */
+    suspend fun deleteTodoList(id: String): Boolean {
+        client.from("todo_lists")
+            .delete {
+                filter {
+                    eq("id", id)
+                }
+            }
+        return true
+    }
+
+    // TODO Items Operations
+
+    /**
+     * Get all items for a specific TODO list
+     */
+    suspend fun getTodoItemsByList(todoListId: String): List<TodoItemEntity> {
+        return client.from("todo_items")
+            .select {
+                filter {
+                    eq("todo_list_id", todoListId)
+                }
+            }
+            .decodeList<TodoItemEntity>()
+    }
+
+    /**
+     * Get a specific TODO item by ID
+     */
+    suspend fun getTodoItemById(id: String): TodoItemEntity? {
+        return client.from("todo_items")
+            .select {
+                filter {
+                    eq("id", id)
+                }
+            }
+            .decodeSingleOrNull<TodoItemEntity>()
+    }
+
+    /**
+     * Create a new TODO item
+     */
+    suspend fun createTodoItem(todoListId: String, text: String, orderIndex: Int): TodoItemEntity {
+        return client.from("todo_items")
+            .insert(
+                CreateTodoItemInput(
+                    todo_list_id = todoListId,
+                    text = text,
+                    order_index = orderIndex
+                )
+            ) {
+                select()
+            }
+            .decodeSingle<TodoItemEntity>()
+    }
+
+    /**
+     * Update a TODO item
+     */
+    suspend fun updateTodoItem(
+        id: String,
+        text: String? = null,
+        completed: Boolean? = null,
+        orderIndex: Int? = null
+    ): TodoItemEntity {
+        return client.from("todo_items")
+            .update(
+                UpdateTodoItemInput(
+                    text = text,
+                    completed = completed,
+                    order_index = orderIndex
+                )
+            ) {
+                filter {
+                    eq("id", id)
+                }
+                select()
+            }
+            .decodeSingle<TodoItemEntity>()
+    }
+
+    /**
+     * Delete a TODO item
+     */
+    suspend fun deleteTodoItem(id: String): Boolean {
+        client.from("todo_items")
+            .delete {
+                filter {
+                    eq("id", id)
+                }
+            }
+        return true
     }
 }

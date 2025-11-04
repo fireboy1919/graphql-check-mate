@@ -5,7 +5,7 @@ This document describes the implementation of per-row policy checks using Viaduc
 ## Overview
 
 We've implemented a group-based access control system where:
-- Users can create **checkbox groups**
+- Users can create **groups**
 - Groups have **members** (many-to-many relationship)
 - Checklist items belong to **groups**
 - **Per-row policy checks** verify group membership before allowing access to items
@@ -15,7 +15,7 @@ This demonstrates Viaduct's policy check feature with custom `@requiresGroupMemb
 ## Architecture
 
 ### Database Layer (RLS + Application Logic)
-- `checkbox_groups` table: stores group information
+- `groups` table: stores group information
 - `group_members` table: manages group memberships
 - `checklist_items.group_id`: links items to groups
 - RLS policies enforce group membership at the database level
@@ -274,7 +274,7 @@ fun `access denied when not group member`() {
 
 ### Database
 - `supabase/migrations/20251008000000_initial_schema.sql` - Initial checklist_items table
-- `supabase/migrations/20251017000000_add_checkbox_groups.sql` - Groups, members, and updated RLS policies
+- `supabase/migrations/20251017000000_add_groups.sql` - Groups, members, and updated RLS policies
 
 ### GraphQL Schema
 - `backend/src/main/viaduct/schema/PolicyDirective.graphqls` - Custom directive

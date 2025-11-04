@@ -214,3 +214,126 @@ export const REMOVE_GROUP_MEMBER = `
     })
   }
 `;
+
+// ----------------------------------------------------------------------------
+// TODO Lists Management
+// ----------------------------------------------------------------------------
+
+export const GET_TODO_LISTS = `
+  query GetTodoLists($groupId: ID!) {
+    todoLists(groupId: $groupId) {
+      id
+      subject
+      groupId
+      ownerId
+      createdAt
+      updatedAt
+      items {
+        id
+        text
+        completed
+        orderIndex
+        createdAt
+      }
+    }
+  }
+`;
+
+export const GET_TODO_LIST = `
+  query GetTodoList($id: ID!) {
+    todoList(id: $id) {
+      id
+      subject
+      groupId
+      ownerId
+      createdAt
+      updatedAt
+      items {
+        id
+        text
+        completed
+        orderIndex
+        createdAt
+        updatedAt
+      }
+    }
+  }
+`;
+
+export const CREATE_TODO_LIST = `
+  mutation CreateTodoList($groupId: ID!, $subject: String!) {
+    createTodoList(input: {
+      groupId: $groupId
+      subject: $subject
+    }) {
+      id
+      subject
+      groupId
+      ownerId
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const UPDATE_TODO_LIST = `
+  mutation UpdateTodoList($id: ID!, $subject: String) {
+    updateTodoList(input: {
+      id: $id
+      subject: $subject
+    }) {
+      id
+      subject
+      updatedAt
+    }
+  }
+`;
+
+export const DELETE_TODO_LIST = `
+  mutation DeleteTodoList($id: ID!) {
+    deleteTodoList(input: {
+      id: $id
+    })
+  }
+`;
+
+export const CREATE_TODO_ITEM = `
+  mutation CreateTodoItem($todoListId: ID!, $text: String!, $orderIndex: Int) {
+    createTodoItem(input: {
+      todoListId: $todoListId
+      text: $text
+      orderIndex: $orderIndex
+    }) {
+      id
+      text
+      completed
+      orderIndex
+      createdAt
+    }
+  }
+`;
+
+export const UPDATE_TODO_ITEM = `
+  mutation UpdateTodoItem($id: ID!, $text: String, $completed: Boolean, $orderIndex: Int) {
+    updateTodoItem(input: {
+      id: $id
+      text: $text
+      completed: $completed
+      orderIndex: $orderIndex
+    }) {
+      id
+      text
+      completed
+      orderIndex
+      updatedAt
+    }
+  }
+`;
+
+export const DELETE_TODO_ITEM = `
+  mutation DeleteTodoItem($id: ID!) {
+    deleteTodoItem(input: {
+      id: $id
+    })
+  }
+`;

@@ -1,0 +1,228 @@
+"""
+A TODO list that belongs to a group.
+Contains a subject and multiple TODO items.
+"""
+type TodoList implements Node @scope(to: ["default"]) @requiresGroupMembership(groupIdField: "groupId") {
+  """
+  The unique identifier for the TODO list.
+  """
+  id: ID!
+
+  """
+  The subject/title of the TODO list.
+  """
+  subject: String!
+
+  """
+  The group this TODO list belongs to.
+  """
+  groupId: String!
+
+  """
+  The user who created this TODO list.
+  """
+  ownerId: String!
+
+  """
+  All items in this TODO list.
+  """
+  items: [TodoItem!]! @resolver
+
+  """
+  When the TODO list was created.
+  """
+  createdAt: String!
+
+  """
+  When the TODO list was last updated.
+  """
+  updatedAt: String!
+}
+
+"""
+A single TODO item within a TODO list.
+Can be marked as complete or incomplete.
+"""
+type TodoItem implements Node @scope(to: ["default"]) {
+  """
+  The unique identifier for the TODO item.
+  """
+  id: ID!
+
+  """
+  The TODO list this item belongs to.
+  """
+  todoListId: String!
+
+  """
+  The text content of the TODO item.
+  """
+  text: String!
+
+  """
+  Whether this item is completed.
+  """
+  completed: Boolean!
+
+  """
+  The order index for sorting items.
+  """
+  orderIndex: Int!
+
+  """
+  When the TODO item was created.
+  """
+  createdAt: String!
+
+  """
+  When the TODO item was last updated.
+  """
+  updatedAt: String!
+}
+
+"""
+Input for creating a new TODO list.
+"""
+input CreateTodoListInput @scope(to: ["default"]) {
+  """
+  The subject/title of the TODO list.
+  """
+  subject: String!
+
+  """
+  The group this TODO list belongs to.
+  """
+  groupId: ID! @idOf(type: "Group")
+}
+
+"""
+Input for updating a TODO list.
+"""
+input UpdateTodoListInput @scope(to: ["default"]) {
+  """
+  The ID of the TODO list to update.
+  """
+  id: ID! @idOf(type: "TodoList")
+
+  """
+  The new subject/title.
+  """
+  subject: String
+}
+
+"""
+Input for creating a new TODO item.
+"""
+input CreateTodoItemInput @scope(to: ["default"]) {
+  """
+  The TODO list this item belongs to.
+  """
+  todoListId: ID! @idOf(type: "TodoList")
+
+  """
+  The text content of the TODO item.
+  """
+  text: String!
+
+  """
+  The order index for sorting items.
+  """
+  orderIndex: Int
+}
+
+"""
+Input for updating a TODO item.
+"""
+input UpdateTodoItemInput @scope(to: ["default"]) {
+  """
+  The ID of the TODO item to update.
+  """
+  id: ID! @idOf(type: "TodoItem")
+
+  """
+  The new text content.
+  """
+  text: String
+
+  """
+  The new completion status.
+  """
+  completed: Boolean
+
+  """
+  The new order index.
+  """
+  orderIndex: Int
+}
+
+"""
+Input for deleting a TODO list.
+"""
+input DeleteTodoListInput @scope(to: ["default"]) {
+  """
+  The ID of the TODO list to delete.
+  """
+  id: ID! @idOf(type: "TodoList")
+}
+
+"""
+Input for deleting a TODO item.
+"""
+input DeleteTodoItemInput @scope(to: ["default"]) {
+  """
+  The ID of the TODO item to delete.
+  """
+  id: ID! @idOf(type: "TodoItem")
+}
+
+extend type Query @scope(to: ["default"]) {
+  """
+  Get all TODO lists for a specific group.
+  Only accessible if the user is a member of the group.
+  """
+  todoLists(groupId: ID! @idOf(type: "Group")): [TodoList!]! @resolver
+
+  """
+  Get a specific TODO list by ID.
+  Only accessible if the user is a member of the group.
+  """
+  todoList(id: ID! @idOf(type: "TodoList")): TodoList @resolver
+}
+
+extend type Mutation @scope(to: ["default"]) {
+  """
+  Create a new TODO list in a group.
+  User must be a member of the group.
+  """
+  createTodoList(input: CreateTodoListInput!): TodoList! @resolver
+
+  """
+  Update a TODO list.
+  Only the owner can update the list.
+  """
+  updateTodoList(input: UpdateTodoListInput!): TodoList! @resolver
+
+  """
+  Delete a TODO list.
+  Only the owner can delete the list.
+  """
+  deleteTodoList(input: DeleteTodoListInput!): Boolean! @resolver
+
+  """
+  Create a new TODO item in a list.
+  User must have access to the list.
+  """
+  createTodoItem(input: CreateTodoItemInput!): TodoItem! @resolver
+
+  """
+  Update a TODO item.
+  User must have access to the list.
+  """
+  updateTodoItem(input: UpdateTodoItemInput!): TodoItem! @resolver
+
+  """
+  Delete a TODO item.
+  Only the list owner can delete items.
+  """
+  deleteTodoItem(input: DeleteTodoItemInput!): Boolean! @resolver
+}
