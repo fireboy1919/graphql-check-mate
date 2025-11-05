@@ -5,6 +5,7 @@ import com.graphqlcheckmate.GraphQLRequestContext
 import com.graphqlcheckmate.SupabaseService
 import com.graphqlcheckmate.resolvers.*
 import com.graphqlcheckmate.services.AuthService
+import com.graphqlcheckmate.services.BlogPostService
 import com.graphqlcheckmate.services.GroupService
 import com.graphqlcheckmate.services.UserService
 import io.ktor.client.HttpClient
@@ -39,6 +40,7 @@ fun appModule(supabaseUrl: String, supabaseKey: String) = module {
     singleOf(::AuthService)
     singleOf(::UserService)
     singleOf(::GroupService)
+    singleOf(::BlogPostService)
 
     // Request scope - automatically tied to Ktor request lifecycle
     // ApplicationCall is automatically available for injection in this scope
@@ -87,6 +89,21 @@ fun appModule(supabaseUrl: String, supabaseKey: String) = module {
 
     // Resolvers - Group Fields
     singleOf(::GroupMembersResolver)
+
+    // Resolvers - Blog Post Queries
+    singleOf(::BlogPostsQueryResolver)
+    singleOf(::BlogPostQueryResolver)
+    singleOf(::BlogPostBySlugQueryResolver)
+    singleOf(::MyBlogPostsQueryResolver)
+
+    // Resolvers - Blog Post Mutations
+    singleOf(::CreateBlogPostResolver)
+    singleOf(::UpdateBlogPostResolver)
+    singleOf(::DeleteBlogPostResolver)
+
+    // Resolvers - Blog Post Fields
+    singleOf(::BlogPostAuthorResolver)
+
     // Note: ChecklistItem resolvers moved to examples
     // See: backend/src/main/kotlin/com/graphqlcheckmate/examples/checklist/resolvers/
 }

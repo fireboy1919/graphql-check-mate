@@ -19,6 +19,13 @@ class UserService(
     }
 
     /**
+     * Get a specific user by ID
+     */
+    suspend fun getUserById(authenticatedClient: AuthenticatedSupabaseClient, userId: String): UserEntity? {
+        return authenticatedClient.getUserById(userId)
+    }
+
+    /**
      * Search for users by email
      * Available to all authenticated users
      */

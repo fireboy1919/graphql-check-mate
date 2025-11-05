@@ -37,6 +37,19 @@ data class UserEntity(
     val created_at: String
 )
 
+@Serializable
+data class BlogPostEntity(
+    val id: String,
+    val group_id: String,
+    val user_id: String,
+    val title: String,
+    val slug: String,
+    val content: String,
+    val published: Boolean,
+    val created_at: String,
+    val updated_at: String
+)
+
 /**
  * Input for creating a new checklist item
  */
@@ -80,6 +93,30 @@ data class SearchUsersInput(
 @Serializable
 data class DeleteUserInput(
     val user_id: String
+)
+
+/**
+ * Input for creating a new blog post
+ */
+@Serializable
+data class CreateBlogPostInput(
+    val group_id: String,
+    val user_id: String,
+    val title: String,
+    val slug: String? = null,
+    val content: String,
+    val published: Boolean = false
+)
+
+/**
+ * Input for updating a blog post
+ */
+@Serializable
+data class UpdateBlogPostInput(
+    val title: String? = null,
+    val slug: String? = null,
+    val content: String? = null,
+    val published: Boolean? = null
 )
 
 /**
@@ -278,6 +315,16 @@ class AuthenticatedSupabaseClient(
     }
 
     /**
+     * Get a specific user by ID
+     * Note: This makes a request to get_all_users and filters.
+     * In production, consider creating a dedicated RPC function.
+     */
+    suspend fun getUserById(userId: String): UserEntity? {
+        val users = getAllUsers()
+        return users.firstOrNull { it.id == userId }
+    }
+
+    /**
      * Search for users by email
      * Available to all authenticated users
      */
@@ -417,5 +464,131 @@ class AuthenticatedSupabaseClient(
                 }
             }
             .decodeList<ChecklistItemEntity>()
+    }
+
+    /**
+     * Get all blog posts the user has access to
+     * Optionally filter by group and/or published status
+     */
+    suspend fun getBlogPosts(groupId: String? = null, publishedOnly: Boolean = false): List<BlogPostEntity> {
+        return client.from("blog_posts")
+            .select {
+                filter {
+                    if (groupId != null) {
+                        eq("group_id", groupId)
+                    }
+                    if (publishedOnly) {
+                        eq("published", true)
+                    }
+                }
+            }
+            .decodeList<BlogPostEntity>()
+    }
+
+    /**
+     * Get a specific blog post by ID
+     */
+    suspend fun getBlogPostById(id: String): BlogPostEntity? {
+        return client.from("blog_posts")
+            .select {
+                filter {
+                    eq("id", id)
+                }
+            }
+            .decodeSingleOrNull<BlogPostEntity>()
+    }
+
+    /**
+     * Get a blog post by slug within a group
+     */
+    suspend fun getBlogPostBySlug(groupId: String, slug: String): BlogPostEntity? {
+        return client.from("blog_posts")
+            .select {
+                filter {
+                    eq("group_id", groupId)
+                    eq("slug", slug)
+                }
+            }
+            .decodeSingleOrNull<BlogPostEntity>()
+    }
+
+    /**
+     * Get all blog posts authored by a specific user
+     */
+    suspend fun getBlogPostsByUserId(userId: String): List<BlogPostEntity> {
+        return client.from("blog_posts")
+            .select {
+                filter {
+                    eq("user_id", userId)
+                }
+            }
+            .decodeList<BlogPostEntity>()
+    }
+
+    /**
+     * Create a new blog post
+     */
+    suspend fun createBlogPost(
+        groupId: String,
+        userId: String,
+        title: String,
+        slug: String?,
+        content: String,
+        published: Boolean
+    ): BlogPostEntity {
+        return client.from("blog_posts")
+            .insert(
+                CreateBlogPostInput(
+                    group_id = groupId,
+                    user_id = userId,
+                    title = title,
+                    slug = slug ?: "",
+                    content = content,
+                    published = published
+                )
+            ) {
+                select()
+            }
+            .decodeSingle<BlogPostEntity>()
+    }
+
+    /**
+     * Update a blog post
+     */
+    suspend fun updateBlogPost(
+        id: String,
+        title: String? = null,
+        slug: String? = null,
+        content: String? = null,
+        published: Boolean? = null
+    ): BlogPostEntity {
+        return client.from("blog_posts")
+            .update(
+                UpdateBlogPostInput(
+                    title = title,
+                    slug = slug,
+                    content = content,
+                    published = published
+                )
+            ) {
+                filter {
+                    eq("id", id)
+                }
+                select()
+            }
+            .decodeSingle<BlogPostEntity>()
+    }
+
+    /**
+     * Delete a blog post
+     */
+    suspend fun deleteBlogPost(id: String): Boolean {
+        client.from("blog_posts")
+            .delete {
+                filter {
+                    eq("id", id)
+                }
+            }
+        return true
     }
 }
